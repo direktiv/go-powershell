@@ -1,4 +1,4 @@
-module github.com/k3s-io/go-powershell
+module github.com/direktiv/go-powershell
 
 go 1.14
 
