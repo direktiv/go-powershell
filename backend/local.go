@@ -9,10 +9,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Local struct{}
+type Local struct {
+	Dir string
+}
 
 func (b *Local) StartProcess(cmd string, args ...string) (Waiter, io.Writer, io.Reader, io.Reader, error) {
 	command := exec.Command(cmd, args...)
+
+	if len(b.Dir) > 0 {
+		command.Dir = b.Dir
+	}
 
 	stdin, err := command.StdinPipe()
 	if err != nil {
