@@ -10,8 +10,9 @@ import (
 )
 
 type Local struct {
-	Dir  string
-	Envs []string
+	Dir    string
+	Envs   []string
+	Writer io.Writer
 }
 
 func (b *Local) StartProcess(cmd string, args ...string) (Waiter, io.Writer, io.Reader, io.Reader, error) {

@@ -26,16 +26,23 @@ type shell struct {
 	stdout io.Reader
 	stderr io.Reader
 
-	DWr io.Writer
+	dWr io.Writer
 }
 
-func New(backend backend.Starter) (Shell, error) {
-	handle, stdin, stdout, stderr, err := backend.StartProcess("/bin/pwsh", "-NoExit", "-Command", "-")
+func New(be backend.Starter) (Shell, error) {
+	handle, stdin, stdout, stderr, err := be.StartProcess("/bin/pwsh", "-NoExit", "-Command", "-")
 	if err != nil {
 		return nil, err
 	}
 
-	return &shell{handle, stdin, stdout, stderr, nil}, nil
+	var wr io.Writer
+	bl, ok := be.(*backend.Local)
+
+	if ok {
+		wr = bl.Writer
+	}
+
+	return &shell{handle, stdin, stdout, stderr, wr}, nil
 }
 
 func (s *shell) Execute(cmd string) (string, string, error) {
@@ -61,8 +68,8 @@ func (s *shell) Execute(cmd string) (string, string, error) {
 	waiter := &sync.WaitGroup{}
 	waiter.Add(2)
 
-	go streamReader(s.stdout, outBoundary, &sout, waiter, s.DWr)
-	go streamReader(s.stderr, errBoundary, &serr, waiter, s.DWr)
+	go streamReader(s.stdout, outBoundary, &sout, waiter, s.dWr)
+	go streamReader(s.stderr, errBoundary, &serr, waiter, s.dWr)
 
 	waiter.Wait()
 
