@@ -25,6 +25,8 @@ type shell struct {
 	stdin  io.Writer
 	stdout io.Reader
 	stderr io.Reader
+
+	dWr io.Writer
 }
 
 func New(backend backend.Starter) (Shell, error) {
@@ -33,7 +35,7 @@ func New(backend backend.Starter) (Shell, error) {
 		return nil, err
 	}
 
-	return &shell{handle, stdin, stdout, stderr}, nil
+	return &shell{handle, stdin, stdout, stderr, nil}, nil
 }
 
 func (s *shell) Execute(cmd string) (string, string, error) {
@@ -59,8 +61,8 @@ func (s *shell) Execute(cmd string) (string, string, error) {
 	waiter := &sync.WaitGroup{}
 	waiter.Add(2)
 
-	go streamReader(s.stdout, outBoundary, &sout, waiter)
-	go streamReader(s.stderr, errBoundary, &serr, waiter)
+	go streamReader(s.stdout, outBoundary, &sout, waiter, s.dWr)
+	go streamReader(s.stderr, errBoundary, &serr, waiter, s.dWr)
 
 	waiter.Wait()
 
@@ -89,7 +91,7 @@ func (s *shell) Exit() {
 	s.stderr = nil
 }
 
-func streamReader(stream io.Reader, boundary string, buffer *string, signal *sync.WaitGroup) error {
+func streamReader(stream io.Reader, boundary string, buffer *string, signal *sync.WaitGroup, wr io.Writer) error {
 	// read all output until we have found our boundary token
 	output := ""
 	bufsize := 64
@@ -103,6 +105,10 @@ func streamReader(stream io.Reader, boundary string, buffer *string, signal *syn
 		}
 
 		output = output + string(buf[:read])
+
+		if wr != nil {
+			wr.Write(buf[:read])
+		}
 
 		if marker.MatchString(output) {
 			break

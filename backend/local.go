@@ -10,11 +10,13 @@ import (
 )
 
 type Local struct {
-	Dir string
+	Dir  string
+	Envs []string
 }
 
 func (b *Local) StartProcess(cmd string, args ...string) (Waiter, io.Writer, io.Reader, io.Reader, error) {
 	command := exec.Command(cmd, args...)
+	command.Env = b.Envs
 
 	if len(b.Dir) > 0 {
 		command.Dir = b.Dir
