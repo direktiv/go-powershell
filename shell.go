@@ -113,16 +113,17 @@ func streamReader(stream io.Reader, boundary string, buffer *string, signal *syn
 
 		output = output + string(buf[:read])
 
-		if wr != nil {
-			wr.Write(buf[:read])
-		}
-
 		if marker.MatchString(output) {
 			break
 		}
 	}
 
 	*buffer = marker.FindStringSubmatch(output)[1]
+
+	if wr != nil {
+		wr.Write([]byte(*buffer))
+	}
+
 	signal.Done()
 
 	return nil
