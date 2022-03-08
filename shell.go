@@ -26,7 +26,7 @@ type shell struct {
 	stdout io.Reader
 	stderr io.Reader
 
-	dWr io.Writer
+	be backend.Starter
 }
 
 func New(be backend.Starter) (Shell, error) {
@@ -35,14 +35,7 @@ func New(be backend.Starter) (Shell, error) {
 		return nil, err
 	}
 
-	var wr io.Writer
-	bl, ok := be.(*backend.Local)
-
-	if ok {
-		wr = bl.Writer
-	}
-
-	return &shell{handle, stdin, stdout, stderr, wr}, nil
+	return &shell{handle, stdin, stdout, stderr, be}, nil
 }
 
 func (s *shell) Execute(cmd string) (string, string, error) {
@@ -68,8 +61,15 @@ func (s *shell) Execute(cmd string) (string, string, error) {
 	waiter := &sync.WaitGroup{}
 	waiter.Add(2)
 
-	go streamReader(s.stdout, outBoundary, &sout, waiter, s.dWr)
-	go streamReader(s.stderr, errBoundary, &serr, waiter, s.dWr)
+	var wr io.Writer
+	bl, ok := s.be.(*backend.Local)
+
+	if ok {
+		wr = bl.Writer
+	}
+
+	go streamReader(s.stdout, outBoundary, &sout, waiter, wr)
+	go streamReader(s.stderr, errBoundary, &serr, waiter, wr)
 
 	waiter.Wait()
 
