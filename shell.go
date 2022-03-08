@@ -26,7 +26,7 @@ type shell struct {
 	stdout io.Reader
 	stderr io.Reader
 
-	dWr io.Writer
+	DWr io.Writer
 }
 
 func New(backend backend.Starter) (Shell, error) {
@@ -61,8 +61,8 @@ func (s *shell) Execute(cmd string) (string, string, error) {
 	waiter := &sync.WaitGroup{}
 	waiter.Add(2)
 
-	go streamReader(s.stdout, outBoundary, &sout, waiter, s.dWr)
-	go streamReader(s.stderr, errBoundary, &serr, waiter, s.dWr)
+	go streamReader(s.stdout, outBoundary, &sout, waiter, s.DWr)
+	go streamReader(s.stderr, errBoundary, &serr, waiter, s.DWr)
 
 	waiter.Wait()
 
