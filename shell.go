@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"strings"
 	"sync"
 
+	"github.com/acarl005/stripansi"
 	"github.com/direktiv/go-powershell/backend"
 	"github.com/direktiv/go-powershell/utils"
 	"github.com/pkg/errors"
@@ -113,16 +115,17 @@ func streamReader(stream io.Reader, boundary string, buffer *string, signal *syn
 
 		output = output + string(buf[:read])
 
+		if wr != nil {
+			sb := strings.Replace(string(buf[:read]), marker.String(), "", -1)
+			wr.Write([]byte(stripansi.Strip(sb)))
+		}
+
 		if marker.MatchString(output) {
 			break
 		}
 	}
 
 	*buffer = marker.FindStringSubmatch(output)[1]
-
-	if wr != nil {
-		wr.Write([]byte(*buffer))
-	}
 
 	signal.Done()
 
