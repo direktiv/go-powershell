@@ -115,13 +115,13 @@ func streamReader(stream io.Reader, boundary string, buffer *string, signal *syn
 
 		output = output + string(buf[:read])
 
+		if marker.MatchString(output) {
+			break
+		}
+
 		if wr != nil {
 			sb := strings.Replace(string(buf[:read]), marker.String(), "", -1)
 			wr.Write([]byte(stripansi.Strip(sb)))
-		}
-
-		if marker.MatchString(output) {
-			break
 		}
 	}
 
