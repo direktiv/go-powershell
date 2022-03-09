@@ -4,6 +4,7 @@ package backend
 
 import (
 	"io"
+	"os"
 	"os/exec"
 
 	"github.com/pkg/errors"
@@ -11,17 +12,12 @@ import (
 
 type Local struct {
 	Dir    string
-	Envs   []string
 	Writer io.Writer
 }
 
 func (b *Local) StartProcess(cmd string, args ...string) (Waiter, io.Writer, io.Reader, io.Reader, error) {
 	command := exec.Command(cmd, args...)
-	command.Env = b.Envs
-
-	if len(b.Dir) > 0 {
-		command.Dir = b.Dir
-	}
+	command.Env = os.Environ()
 
 	stdin, err := command.StdinPipe()
 	if err != nil {

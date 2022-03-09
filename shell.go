@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"regexp"
-	"strings"
 	"sync"
 
 	"github.com/acarl005/stripansi"
@@ -41,6 +40,7 @@ func New(be backend.Starter) (Shell, error) {
 }
 
 func (s *shell) Execute(cmd string) (string, string, error) {
+
 	if s.handle == nil {
 		return "", "", errors.Wrap(errors.New(cmd), "Cannot execute commands on closed shells.")
 	}
@@ -105,6 +105,7 @@ func streamReader(stream io.Reader, boundary string, buffer *string, signal *syn
 	output := ""
 	bufsize := 64
 	marker := regexp.MustCompile("(?s)(.*)" + regexp.QuoteMeta(boundary))
+	marker2 := regexp.MustCompile("\\$gorilla[a-z0-9]*")
 
 	for {
 		buf := make([]byte, bufsize)
@@ -114,14 +115,13 @@ func streamReader(stream io.Reader, boundary string, buffer *string, signal *syn
 		}
 
 		output = output + string(buf[:read])
-
 		if marker.MatchString(output) {
 			break
 		}
 
 		if wr != nil {
-			sb := strings.Replace(string(buf[:read]), marker.String(), "", -1)
-			wr.Write([]byte(stripansi.Strip(sb)))
+			sb := marker2.ReplaceAll(buf[:read], []byte(""))
+			wr.Write([]byte(stripansi.Strip(string(sb))))
 		}
 	}
 
